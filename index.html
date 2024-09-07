@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+            /* display: grid; */
+            /* place-items: center; */
+            text-align: center;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas></canvas>
+</body>
+<script>
+    const can = document.querySelector("canvas");
+    can.width = 700;
+    can.height = 700;
+    const ctx = can.getContext('2d');
+
+    let isDrawing = false;
+    let path = [];
+    let nextPoint = 1;
+    let speed = 1.0;
+    let plane = { x: -300, y: -300, a: 0 };
+
+    document.addEventListener("pointerup", (e) => {
+        isDrawing = false;
+        position = 0;
+        smoothPath();
+        plane = { x: path[0].x, y: path[0].y, a: 0 };
+    });
+    document.addEventListener("pointerdown", (e) => {
+        isDrawing = true;
+        plane = { x: -300, y: -300, a: 0 };
+        path = [{ x: e.offsetX, y: e.offsetY }];
+    });
+    document.addEventListener("pointermove", (e) => {
+        if (isDrawing) {
+            path.push({ x: e.offsetX, y: e.offsetY })
+        }
+    });
+
+    function smoothPath() {
+        if (path.length === 0) {
+            return;
+        }
+        console.log(path.length);
+        path = path.filter((val, ind) => ind % 2 === 0)
+        console.log(path.length);
+    }
+
+    function drawPath() {
+        if (path.length === 0) {
+            return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        path.forEach(p => {
+            ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+    }
+
+    function update() {
+        if (path.length === 0 || isDrawing === true || nextPoint === path.length) {
+            return;
+        }
+        let dy = path[nextPoint].y - plane.y;
+        let dx = path[nextPoint].x - plane.x;
+        let d = Math.sqrt(dx*dx + dy*dy);
+        if (d <= 0.5) {
+            nextPoint++;
+        }
+        if (dx !== 0) {
+            let a = Math.atan2(dy, dx);
+            plane.x += speed * Math.cos(a);
+            plane.y += speed * Math.sin(a);
+            plane.a = a + Math.PI / 2;
+        }
+    }
+
+
+    function animate() {
+        ctx.clearRect(0, 0, can.width, can.height);
+        drawPath();
+        update();
+        drawPlane(plane.x, plane.y, plane.a);
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+
+    function drawPlane(x, y, a) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        //left
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -30);
+        ctx.lineTo(-15, 10);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.stroke();
+
+        //right
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -30);
+        ctx.lineTo(15, 10);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = "green";
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+    // drawPlane(300, 300, Math.PI/2+0.6);
+</script>
+
+</html>
